@@ -16,6 +16,10 @@ services:
     environment:
       - REDIS_ADDR=redis:6379
       - SERVICE_ADDR=https://jsonplaceholder.typicode.com/users
+      - LIMITER_TYPE=hybrid
+      - MAX_REQUESTS=50
+      - WINDOW=2s
+      - SYNC_INTERVAL=1ms
     depends_on:
       - redis
     restart: unless-stopped

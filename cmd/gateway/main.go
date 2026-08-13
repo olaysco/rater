@@ -37,7 +37,13 @@ func main() {
 		log.Fatalf("Couldnt connect to Redis: %v", err)
 	}
 
-	limiter, err := limiters.NewRedisLimiter(redisClient, 50, 10)
+	limiter, err := limiters.NewLimiter(
+		config.LimiterType,
+		limiters.WithRedis(redisClient),
+		limiters.WithLimits(config.MaxRequests, config.Window),
+		limiters.WithSyncInterval(config.SyncInterval),
+	)
+
 	if err != nil {
 		log.Fatalf("Failed to initialize Redis Limiter: %v", err)
 	}
