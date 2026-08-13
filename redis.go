@@ -57,12 +57,12 @@ func NewRedisLimiter(client *redis.Client, capacity int, refillRate float64) (*R
 }
 
 func (rl *RedisLimiter) Allow(userId string) bool {
-
-	allow, err := rl.client.EvalSha(rl.scriptSHA, []string{userId}, rl.capacity, rl.refillRate, time.Now().Unix()).Result()
-
-	if allow.(int) <= 0 || err != nil {
-		return false
+	// Get the current time in seconds with fractional part
+	now := float64(time.Now().UnixNano()) / 1e9
+	allow, err := rl.client.EvalSha(rl.scriptSHA, []string{userId}, rl.capacity, rl.refillRate, now).Int()
+	if allow > 0 || err != nil {
+		return true
 	}
 
-	return true
+	return false
 }
