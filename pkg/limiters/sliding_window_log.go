@@ -1,4 +1,4 @@
-package rater
+package limiters
 
 import (
 	"sync"

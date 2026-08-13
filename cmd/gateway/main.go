@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-redis/redis"
 	"github.com/olaysco/rater"
+	"github.com/olaysco/rater/pkg/limiters"
 )
 
 func main() {
@@ -34,7 +35,7 @@ func main() {
 		log.Fatalf("Couldnt connect to Redis: %v", err)
 	}
 
-	limiter, err := rater.NewRedisLimiter(redisClient, 50, 10)
+	limiter, err := limiters.NewRedisLimiter(redisClient, 50, 10)
 	if err != nil {
 		log.Fatalf("Failed to initialize Redis Limiter: %v", err)
 	}

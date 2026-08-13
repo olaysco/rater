@@ -2,6 +2,14 @@
 
 A high-performance, zero-allocation rate limiting library and API Gateway middleware for Go.
 
+```mermaid
+flowchart TD
+    Client["Client 📩"] --> Gateway["API Gateway (Act as a traffic controller)"]
+    Gateway --> Check{"Check Limit"}
+    Check -->|Allowed ✅| Upstream["Upstream API"]
+    Check -->|Exceeded ❌| Error["429 Error"]
+```
+
 ## 📌 Features
 
 * 🧮 **Multiple Algorithms:** Token Bucket, Sliding Window Log, and Sliding Window Counter.

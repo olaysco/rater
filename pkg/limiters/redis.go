@@ -1,4 +1,4 @@
-package rater
+package limiters
 
 import (
 	"fmt"
@@ -43,6 +43,7 @@ end
 `
 
 func NewRedisLimiter(client *redis.Client, capacity int, refillRate float64) (*RedisLimiter, error) {
+	// Load the Lua script once and use its SHA for future reference
 	sha, err := client.ScriptLoad(tokenBucketScript).Result()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load Redis Lua script: %w", err)
