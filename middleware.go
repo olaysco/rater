@@ -3,6 +3,8 @@ package rater
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/olaysco/rater/pkg/limiters"
 )
 
 // Configurable strategy for extracting client key
@@ -17,11 +19,11 @@ func defaultKeyFunc(r *http.Request) string {
 	return clientKey
 }
 
-func RateLimitMiddleware(limiter Limiter, next http.Handler) http.Handler {
+func RateLimitMiddleware(limiter limiters.Limiter, next http.Handler) http.Handler {
 	return RateLmitMiddlewareWithKeyFunc(limiter, defaultKeyFunc, next)
 }
 
-func RateLmitMiddlewareWithKeyFunc(limiter Limiter, keyFunc KeyFunc, next http.Handler) http.Handler {
+func RateLmitMiddlewareWithKeyFunc(limiter limiters.Limiter, keyFunc KeyFunc, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Identify the user
 		clientKey := keyFunc(r)
