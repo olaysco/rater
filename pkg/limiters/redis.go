@@ -1,10 +1,11 @@
 package limiters
 
 import (
+	"context"
 	"fmt"
 	"time"
 
-	"github.com/go-redis/redis"
+	"github.com/redis/go-redis/v9"
 )
 
 type RedisLimiter struct {
@@ -14,6 +15,7 @@ type RedisLimiter struct {
 	refillRate float64
 }
 
+// Lua script for token bucket algorithm in Redis
 var tokenBucketScript = `
 local key = KEYS[1]
 local capacity = tonumber(ARGV[1])
@@ -44,7 +46,7 @@ end
 
 func NewRedisLimiter(client *redis.Client, capacity int, refillRate float64) (*RedisLimiter, error) {
 	// Load the Lua script once and use its SHA for future reference
-	sha, err := client.ScriptLoad(tokenBucketScript).Result()
+	sha, err := client.ScriptLoad(context.Background(), tokenBucketScript).Result()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load Redis Lua script: %w", err)
 	}
@@ -57,10 +59,11 @@ func NewRedisLimiter(client *redis.Client, capacity int, refillRate float64) (*R
 	}, nil
 }
 
+// Allow checks if a request is allowed for the given userId using Redis as the backend.
 func (rl *RedisLimiter) Allow(userId string) bool {
 	// Get the current time in seconds with fractional part
 	now := float64(time.Now().UnixNano()) / 1e9
-	allow, err := rl.client.EvalSha(rl.scriptSHA, []string{userId}, rl.capacity, rl.refillRate, now).Int()
+	allow, err := rl.client.EvalSha(context.Background(), rl.scriptSHA, []string{userId}, rl.capacity, rl.refillRate, now).Int()
 	if allow > 0 || err != nil {
 		return true
 	}

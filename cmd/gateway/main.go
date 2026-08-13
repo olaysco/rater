@@ -1,19 +1,21 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 
-	"github.com/go-redis/redis"
 	"github.com/olaysco/rater"
 	"github.com/olaysco/rater/pkg/limiters"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
 	config := NewConfig()
+	ctx := context.Background()
 	targeturl, e := url.Parse(config.ServiceAddr)
 	if e != nil {
 		return
@@ -31,7 +33,7 @@ func main() {
 		Addr: config.RedisAddr,
 	})
 
-	if err := redisClient.Ping().Err(); err != nil {
+	if err := redisClient.Ping(ctx).Err(); err != nil {
 		log.Fatalf("Couldnt connect to Redis: %v", err)
 	}
 
