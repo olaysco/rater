@@ -12,15 +12,22 @@ import (
 )
 
 func main() {
-	targeturl, e := url.Parse("http://olays.co")
+	config := NewConfig()
+	targeturl, e := url.Parse(config.ServiceAddr)
 	if e != nil {
 		return
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(targeturl)
+	// Preserve original director behavior
+	originalDirector := proxy.Director
+	proxy.Director = func(req *http.Request) {
+		originalDirector(req)
+		req.Host = targeturl.Host
+	}
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: config.RedisAddr,
 	})
 
 	if err := redisClient.Ping().Err(); err != nil {
@@ -33,6 +40,6 @@ func main() {
 	}
 
 	handler := rater.RateLimitMiddleware(limiter, proxy)
-	fmt.Println("API Gateway running on :8081 -> Proxying to :8081")
-	http.ListenAndServe(":8081", handler)
+	fmt.Println("API Gateway running on :8080 -> Proxying to ", config.ServiceAddr)
+	http.ListenAndServe(":8080", handler)
 }
