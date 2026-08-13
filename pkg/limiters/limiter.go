@@ -50,6 +50,7 @@ func WithRefillRate(refillRate float64) Option {
 	return func(o *LimiterOptions) { o.RefillRate = refillRate }
 }
 
+// NewLiimiter creates a new Limiter.
 func NewLimiter(limiterType string, opts ...Option) (Limiter, error) {
 	options := &LimiterOptions{
 		Type: limiterType,

@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 
 	"github.com/olaysco/rater"
 	"github.com/olaysco/rater/pkg/limiters"
@@ -14,8 +16,11 @@ import (
 )
 
 func main() {
-	config := NewConfig()
 	ctx := context.Background()
+
+	config := NewConfig()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
 	targeturl, e := url.Parse(config.ServiceAddr)
 	if e != nil {
 		return
@@ -29,6 +34,11 @@ func main() {
 		req.Host = targeturl.Host
 	}
 
+	startProxy(ctx, *config, logger, proxy)
+}
+
+// startProxy initializes the Redis client, sets up the rate limiter.
+func startProxy(ctx context.Context, config Config, logger *slog.Logger, proxy http.Handler) {
 	redisClient := redis.NewClient(&redis.Options{
 		Addr: config.RedisAddr,
 	})
@@ -48,7 +58,7 @@ func main() {
 		log.Fatalf("Failed to initialize Redis Limiter: %v", err)
 	}
 
-	handler := rater.RateLimitMiddleware(limiter, proxy)
+	handler := rater.RateLimitMiddleware(limiter, proxy, logger)
 	fmt.Println("API Gateway running on :8080 -> Proxying to ", config.ServiceAddr)
 	http.ListenAndServe(":8080", handler)
 }

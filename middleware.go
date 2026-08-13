@@ -1,7 +1,7 @@
 package rater
 
 import (
-	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/olaysco/rater/pkg/limiters"
@@ -19,11 +19,12 @@ func defaultKeyFunc(r *http.Request) string {
 	return clientKey
 }
 
-func RateLimitMiddleware(limiter limiters.Limiter, next http.Handler) http.Handler {
-	return RateLmitMiddlewareWithKeyFunc(limiter, defaultKeyFunc, next)
+// RateLimitMiddleware applies rate limiting using the default key function.
+func RateLimitMiddleware(limiter limiters.Limiter, next http.Handler, logger *slog.Logger) http.Handler {
+	return RateLmitMiddlewareWithKeyFunc(limiter, logger, defaultKeyFunc, next)
 }
 
-func RateLmitMiddlewareWithKeyFunc(limiter limiters.Limiter, keyFunc KeyFunc, next http.Handler) http.Handler {
+func RateLmitMiddlewareWithKeyFunc(limiter limiters.Limiter, logger *slog.Logger, keyFunc KeyFunc, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Identify the user
 		clientKey := keyFunc(r)
@@ -33,7 +34,14 @@ func RateLmitMiddlewareWithKeyFunc(limiter limiters.Limiter, keyFunc KeyFunc, ne
 			w.Header().Set("X-RateLimit-Remaining", "0")
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusTooManyRequests)
-			fmt.Fprintln(w, `{"error": "Too Many Requests", "message": "Rate limit exceeded. Try again later."}`)
+
+			logger.Warn("rate limit exceeded",
+				slog.String("client_key", clientKey),
+				slog.String("path", r.URL.Path),
+				slog.String("method", r.Method),
+				slog.String("remote_addr", r.RemoteAddr),
+				slog.Int("status", http.StatusTooManyRequests),
+			)
 
 			return
 		}
